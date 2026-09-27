@@ -1,0 +1,43 @@
+{
+  "name": "hivemind-crashlytics",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configurable read-only Crashlytics observation bot for Hivemind",
+  "type": "module",
+  "bin": {
+    "hivemind-crashlytics": "bin/hivemind-crashlytics.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "BOT-TOOLS.md",
+    "hivemind-bot.json",
+    "settings.schema.json",
+    "README.md",
+    "ALERTS.md",
+    "SECURITY.md",
+    "REVIEW.md"
+  ],
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "test:integration": "node scripts/integration.mjs",
+    "test:package": "node scripts/package-smoke.mjs",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write src test bin scripts *.json *.md .prettierrc.json",
+    "format:check": "prettier --check src test bin scripts *.json *.md .prettierrc.json",
+    "check": "npm run typecheck && npm test"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "firebase-tools": "15.31.0",
+    "tsx": "4.23.13",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.4",
+    "typescript": "5.9.3",
+    "prettier": "3.9.9"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+.runtime/
+*.log
+*.db
+*.db-*
+*.tgz
+.DS_Store
+.env
+.env.*
+config.json
+hivemind-project.json
+profiles/
+*.pem
+*.key
+firebase-debug.log*

@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "id": "hivemind-crashlytics",
+  "name": "Crashlytics",
+  "instructions": "BOT-TOOLS.md",
+  "settings": "settings.schema.json",
+  "command": "bin/hivemind-crashlytics.mjs",
+  "kind": "bot",
+  "capabilities": ["publish", "tools"],
+  "tools": [
+    {
+      "name": "retry",
+      "description": "Explicitly requeue blocked deliveries for one enabled subscription after the operator resolves the cause and authorizes retry. Requires a stopped monitor; preserves event and attachment IDs. Does not start polling or send messages.",
+      "effect": "configure",
+      "parameters": {
+        "version": 1,
+        "fields": [
+          {
+            "key": "id",
+            "label": "Subscription ID",
+            "type": "string",
+            "required": true,
+            "maxLength": 200
+          }
+        ]
+      }
+    },
+    {
+      "name": "status",
+      "description": "Inspect local monitor state and section counts. Select a section for paginated details, following nextOffset. Long diagnostic fields are marked previews. Does not contact the provider.",
+      "effect": "read",
+      "parameters": {
+        "version": 1,
+        "fields": [
+          {
+            "key": "section",
+            "label": "Section",
+            "type": "string",
+            "choices": ["summary", "subscriptions", "deliveryErrors"],
+            "default": "summary"
+          },
+          {
+            "key": "offset",
+            "label": "Offset",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000000,
+            "default": 0
+          },
+          {
+            "key": "limit",
+            "label": "Page size",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        ]
+      }
+    },
+    {
+      "name": "start",
+      "description": "Start this project's monitor. It reads the provider and publishes observations to followed channels.",
+      "effect": "configure",
+      "parameters": {
+        "version": 1,
+        "fields": []
+      }
+    },
+    {
+      "name": "stop",
+      "description": "Request that this project's monitor stop. Already in-flight operations may finish; check status.",
+      "effect": "configure",
+      "parameters": {
+        "version": 1,
+        "fields": []
+      }
+    },
+    {
+      "name": "follow",
+      "description": "Configure observation of one exact source in an existing channel. Requires a stopped monitor. Does not start polling or perform a review.",
+      "effect": "configure",
+      "parameters": {
+        "version": 1,
+        "fields": [
+          {
+            "key": "url",
+            "label": "Source URL",
+            "type": "string",
+            "required": true,
+            "maxLength": 2048
+          },
+          {
+            "key": "channel",
+            "label": "Channel ID",
+            "type": "string",
+            "required": true,
+            "maxLength": 200
+          },
+          {
+            "key": "initial",
+            "label": "Initial observation",
+            "type": "string",
+            "choices": ["snapshot", "baseline"],
+            "default": "snapshot"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unfollow",
+      "description": "Stop following an exact subscription ID and cancel its undelivered observations. Does not change the source or archive the channel.",
+      "effect": "configure",
+      "parameters": {
+        "version": 1,
+        "fields": [
+          {
+            "key": "id",
+            "label": "Subscription ID",
+            "type": "string",
+            "required": true,
+            "maxLength": 200
+          }
+        ]
+      }
+    }
+  ]
+}
