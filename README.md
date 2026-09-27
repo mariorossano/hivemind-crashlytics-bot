@@ -9,6 +9,143 @@ capabilities and project-specific settings). Do not install against an older
 core that lacks that contract. This repository is available privately for
 first-install testing; see the verification and release checklist below.
 
+## Quick start
+
+This walkthrough uses Hivemind's UI and a brain to connect one Firebase app to
+one channel. The monitor itself does not use an AI model.
+
+**Before you begin:** Node.js >=22.13, npm and Git; access to this private GitHub
+repository; a running Hivemind with the composable Bots API; a Hivemind project
+and brain; and a Firebase account with read access to the app. Run the terminal
+commands on the computer running Hivemind, not just on a computer viewing its UI.
+
+### 1. Download and install
+
+```sh
+git clone https://github.com/mariorossano/hivemind-crashlytics-bot.git
+cd hivemind-crashlytics-bot
+npm ci
+```
+
+No separate build is needed. Keep this directory: Hivemind will run the bot from
+here. The npm package is not published to a registry.
+
+### 2. Check your Firebase login
+
+If the intended account is not already logged into Firebase CLI, run from the
+checkout:
+
+```sh
+node node_modules/firebase-tools/lib/bin/firebase.js login
+```
+
+Signing into Firebase in your browser is not the same as signing into its CLI.
+Use an account that can read the app; do not paste passwords or tokens into
+Hivemind. No Cloud Functions, Pub/Sub or BigQuery setup is required.
+
+### 3. Register the bot with Hivemind
+
+From the same checkout, replace `/absolute/hivemind-home` with the **home directory
+of your running Hivemind instance**, not the bot checkout or its future profile:
+
+```sh
+hivemind bots add "$PWD/hivemind-bot.json" --home /absolute/hivemind-home
+```
+
+If `hivemind` is not on your PATH, replace it with
+`node /absolute/hivemind/bin/hivemind.mjs` from your Hivemind installation.
+Registration only adds the package to the catalog. It does not read crashes or
+start a monitor.
+
+### 4. Configure and connect in the UI
+
+In your Hivemind project, open **Project settings → Bots… → Add bot**, choose
+**Crashlytics** under **Service**, then **Configure**. Use **Refresh** if the newly
+registered service is not listed.
+
+- Leave **Firebase account email** empty to use the CLI's default login, or enter
+  the email of the specific account already logged into that CLI.
+- For a first test, keep the defaults: 300-second polling, 90-second timeout,
+  7-day lookback, `OPEN` issues and `FATAL` errors (crashes). Leave version names
+  empty to include all versions. These filters do not include every error type
+  or closed issue; they can be changed deliberately.
+- Check **Enable service for this project after saving**, then **Save locally**.
+- Keep the bot name **Crashlytics** and press **Create and connect bot**.
+
+Keep **Publish** and **Tools** enabled; **Receive** is not needed. Configuration
+and connection do not read Firebase or start monitoring. **Do not press Start
+monitor yet.**
+
+### 5. Copy the app's Crashlytics URL
+
+In Firebase Console, select your Firebase project, open **Crashlytics**, select
+the app and stay on the page listing its issues. **Copy that page's URL from the
+browser address bar**, not the link to an individual issue. An example is:
+
+```text
+https://console.firebase.google.com/project/example-prod/crashlytics/app/ios:com.example.app/issues?state=open&time=7d&types=crash
+```
+
+The URL identifies the Firebase project and app; it is **not** a password or
+token. Its supported filters can override the corresponding bot defaults.
+**Do not paste it into Service settings or Firebase account email.** Give it
+to the brain in the single message below.
+
+### 6. Ask the brain to finish setup and start — one message
+
+After the bot is connected, you do not need to create the channel, invite its
+members or press Start manually. Send this to your brain in the intended
+Hivemind project. Replace `@YOUR_BRAIN` with an actual mention of your brain and
+`FIREBASE_APP_URL` with the URL you copied:
+
+> @YOUR_BRAIN Set up Crashlytics monitoring in this Hivemind project for:
+> FIREBASE_APP_URL
+>
+> Create a private channel named `crashes`, or reuse it if it already exists and
+> is private. Add me, yourself and the existing connected Crashlytics bot.
+> Use the native bot tools to follow that app in this channel with initial mode
+> `snapshot`, then start the monitor. I authorize these setup and monitoring
+> actions, including importing matching existing issues and representative stacks.
+> Do not create a second bot or initialize another profile.
+>
+> Verify the saved app URL, destination channel, first successful Firebase read
+> and delivery of observations. Report any errors; do not claim success merely
+> because the process started. If no issues match, confirm a successful empty read.
+> Send me the channel link and the result. Monitoring does not authorize analysis,
+> code changes or fixes.
+>
+> If the channel name belongs to a public channel, the source is ambiguous, or
+> setup would require stopping an active monitor or starting unrelated sources,
+> ask me before doing that.
+
+Choose any suitable channel name; a private channel is useful because stacks
+can contain application data. To receive **future changes only**, replace
+`snapshot` with `baseline` and ask to omit the existing-issue import.
+Its first successful read is intentionally quiet.
+
+The brain performs the requested channel creation/invitations using Hivemind's
+channel tools, discovers Crashlytics with `bot_tools`, and calls native `follow`
+with the app URL and channel ID. **Native `follow` configures only; `start` is the
+separate tool call that begins reads and posts.** Both are authorized by this
+single message. The bot never creates channels itself, and inviting it alone
+does not choose an app.
+
+If the brain lacks the instructions, provide the installed
+[BOT-TOOLS.md](BOT-TOOLS.md); do not let it guess commands or report success
+without tool results. Native client permission prompts may still need your
+approval; a chat instruction does not disable those checks.
+
+### Check or stop later
+
+Use **Bots → Crashlytics → Check status**, or ask the brain to inspect subscription
+and delivery-error details. A running process alone is not proof of a successful
+Firebase read or message delivery. No messages can be normal with `baseline`
+or no matching issues.
+
+Ask the brain to stop, or use **Stop monitor**. One monitor serves all subscriptions
+in the project's profile; stopping it affects them all. Closing the browser or
+disabling service availability does not stop a running monitor.
+
 ## Project-specific Hivemind settings
 
 The package manifest declares `settings.schema.json`. Hivemind uses that schema to render **Project settings → Bots…**, with a separate profile and availability setting per project. Install the package once; registration alone does not enable it. For an existing configured profile, use `hivemind bots bind hivemind-crashlytics --project PROJECT_SLUG --config-home /existing/profile --home /hive` after registration. This preserves bots, subscriptions, cache and outbox in place.
@@ -23,20 +160,13 @@ Hivemind substitutes the project profile into the brain's `{{command}}` instruct
 
 Independent configurable Hivemind bot. A non-model **Crashlytics** bot follows Firebase app issue reports and delivers changed observations to **any Human-selected existing channel**, public or private, including channels shared with GitLab. No channel is created or reserved by this bot. Apps and channels are selected per `follow`, not hardcoded in the package.
 
-## Install and configure
+## Operator CLI reference
 
-Node >=22.13 and GitHub access to this private repository are required.
-Clone the repository and install its locked dependencies:
-
-```sh
-git clone https://github.com/mariorossano/hivemind-crashlytics-bot.git
-cd hivemind-crashlytics-bot
-npm ci
-```
-
-Cloning and installing dependencies do not register a bot, read Firebase or
-start a monitor. See [Register with Hivemind](#register-with-hivemind) for the
-next step. The npm package remains private and is not published to a registry.
+The [Quick start](#quick-start) above is the UI-and-brain installation path.
+The commands below are an alternative operator workflow, not additional setup
+steps. After UI setup, preserve the project's profile path shown under Service
+settings with `--home`; do not initialize a second unrelated default profile.
+Unlike native `follow`, CLI `follow` starts monitoring unless `--no-start` is set.
 
     hivemind-crashlytics init --hive-url http://127.0.0.1:7420 --account you@example.com --interval 300
     hivemind-crashlytics follow 'https://console.firebase.google.com/project/example-prod/crashlytics/app/ios:com.example.app/issues?state=open&time=7d&types=crash' --channel CHANNEL_ID

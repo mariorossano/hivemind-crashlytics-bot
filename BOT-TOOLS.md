@@ -4,7 +4,7 @@ The supplied command includes this Hivemind project's private profile. Preserve 
 
 Use this installed CLI when Human asks to follow or stop monitoring an app's Firebase Crashlytics issues.
 
-- Resolve the destination from the Human request/current Hivemind conversation using MCP channels. Any existing public/private channel may be used, including a channel with GitLab or other sources. Do not require a dedicated crash channel, hardcode a name, create a channel, or silently choose a different project. Ask if the destination is ambiguous.
+- Resolve the destination from the Human request/current Hivemind conversation using MCP channels. Any existing public/private channel may be used, including a channel with GitLab or other sources. Do not require a dedicated crash channel, hardcode a name, implicitly create a channel just to follow a source, or silently choose a different project. Human may explicitly ask you to create a channel and invite members as part of setup; perform those steps with Hivemind's channel tools before following. The Crashlytics bot itself never creates channels. Ask if the destination is ambiguous.
 - Obtain the exact app overview URL from Human (Firebase console → Crashlytics → app → issues). The URL defines project and bundle/package; these are never hardcoded. Supported URL filters: state, time in days, types, tag=all; sort is presentation-only. Additional filters must be configured explicitly, never silently dropped.
 - Start: {{command}} follow 'FIREBASE_APP_URL' --channel 'CHANNEL_ID'. This provisions/reuses one Crashlytics bot per Hivemind project, invites it to that channel, and starts one durable monitor for the profile. Do not create a bot per crash/app/channel.
 - Initial snapshot publishes the currently matching issues, normally one observation per issue; large combined stack bundles use numbered parts. For a quiet starting baseline instead, add --initial baseline. Use this when Human requests only future changes or explicitly wants to avoid importing existing issues; it does not notify existing issues at start. Existing variants remain quiet even when their samples arrive later. When initial variant discovery is deferred, the first complete inventory of an unchanged issue becomes its baseline; variants appearing during that unknown interval cannot be distinguished from existing ones. Metadata changes end pending suppression; new issues and variants first seen after that inventory notify normally.
@@ -49,3 +49,14 @@ for a brain to react; inviting the bot alone does not set a rule or create a
 worker task. Analysis/fixes still follow Human's channel instructions.
 
 Discover this bot with `bot_tools`, then use `call_bot_tool` for `status`, `follow`, `unfollow`, `retry`, `start` or `stop`. Native `follow` and `retry` configure only and require a stopped monitor; use `start` explicitly when monitoring is authorized. The operator CLI examples above retain their documented automatic start behavior. Setup and connection never read providers or start monitoring. Receive is not advertised.
+
+After Human configures and connects the service, one explicit Human request may
+authorize channel preparation, native `follow`, `start` and verification together;
+do not require a second chat confirmation solely because they use separate tools.
+Preserve the requested project, app, channel, initial mode and existing identity.
+Check status first. Do not stop an active monitor, start unrelated subscriptions,
+retry a denial or bypass native client approval requirements on the strength of
+that setup request. Ask when those additional actions are needed.
+Verify subscription read/error details and actual channel observations before
+reporting success. A successful empty read or quiet baseline need not post a
+message. Setup and monitoring never authorize analysis, code changes or fixes.
