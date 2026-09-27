@@ -17,15 +17,26 @@ try {
   for (const file of pack.files) {
     assert.match(
       file.path,
-      /^(?:bin\/[^/]+\.mjs|src\/.+\.ts|(?:README|BOT-TOOLS|SECURITY|REVIEW|ALERTS)\.md|(?:package|hivemind-bot|settings.schema)\.json)$/,
+      /^(?:LICENSE|NOTICE|bin\/[^/]+\.mjs|src\/.+\.ts|(?:README|BOT-TOOLS|SECURITY|REVIEW|ALERTS)\.md|(?:package|hivemind-bot|settings.schema)\.json)$/,
     );
     assert.ok(!/\.db|\.env|\.log|node_modules|hivemind-project|config\.json/.test(file.path));
   }
   const packagedPaths = new Set(pack.files.map((file) => file.path));
-  for (const required of ['README.md', 'ALERTS.md', 'BOT-TOOLS.md', 'SECURITY.md', 'REVIEW.md']) {
+  for (const required of [
+    'LICENSE',
+    'NOTICE',
+    'README.md',
+    'ALERTS.md',
+    'BOT-TOOLS.md',
+    'SECURITY.md',
+    'REVIEW.md',
+  ]) {
     assert.ok(packagedPaths.has(required), `Missing packaged documentation: ${required}`);
   }
   assert.ok(!packagedPaths.has('src/native-alerts.ts'));
+  assert.ok(packagedPaths.has('src/top-issues.ts'));
+  assert.ok(packagedPaths.has('src/query-errors.ts'));
+  assert.ok(packagedPaths.has('src/readers/parent-lifeline.ts'));
   assert.ok(!packagedPaths.has('package-lock.json'));
   const install = path.join(scratch, 'install');
   mkdirSync(install);
@@ -69,6 +80,16 @@ try {
   assert.match(run(['help']), /Crashlytics|crashlytics/);
   assert.doesNotMatch(run(['help']), /import-alert/);
   assert.match(run(['instructions']), /Native Hivemind tools/);
+  assert.match(run(['instructions']), /top_issues/);
+  const manifest = JSON.parse(readFileSync(path.join(install, 'hivemind-bot.json'), 'utf8'));
+  const metadata = JSON.parse(readFileSync(path.join(install, 'package.json'), 'utf8'));
+  assert.equal(metadata.license, 'Apache-2.0');
+  assert.match(
+    readFileSync(path.join(install, 'LICENSE'), 'utf8'),
+    /Apache License[\s\S]+Version 2\.0/,
+  );
+  assert.match(readFileSync(path.join(install, 'NOTICE'), 'utf8'), /Copyright 2026 Mario Rossano/);
+  assert.equal(manifest.tools.find((tool) => tool.name === 'top_issues').effect, 'read');
   // Exercise the packed configuration validator, without a Firebase read.
   assert.throws(
     () =>

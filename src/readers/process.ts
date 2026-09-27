@@ -8,6 +8,8 @@ export type Command = {
   timeoutMs: number;
   signal?: AbortSignal;
   maxOutputBytes?: number;
+  /** Cooperating Node helper must installParentLifeline before doing any work. */
+  parentLifeline?: boolean;
 };
 export type CommandResult = { stdout: string };
 export type Runner = (command: Command) => Promise<CommandResult>;
@@ -41,7 +43,7 @@ export const runCommand: Runner = (command) =>
       cwd: command.cwd,
       env: { ...process.env, SHELL_SESSIONS_DISABLE: '1' },
       detached: process.platform !== 'win32',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: command.parentLifeline ? ['pipe', 'pipe', 'pipe', 'ipc'] : ['pipe', 'pipe', 'pipe'],
     });
     const stdout: Buffer[] = [];
     let exited = false;
@@ -74,12 +76,13 @@ export const runCommand: Runner = (command) =>
       clearTimeout(killer);
       command.signal?.removeEventListener('abort', abort);
     };
-    child.stdout.on('data', (chunk: Buffer) => {
+    // All variants above keep stdin/stdout/stderr piped; only fd 3 is optional.
+    child.stdout!.on('data', (chunk: Buffer) => {
       bytes += chunk.length;
       if (bytes > outputLimit) stop(`Reader output exceeded ${outputLimit / 1024 / 1024} MB`);
       else stdout.push(chunk);
     });
-    child.stderr.on('data', (chunk: Buffer) => {
+    child.stderr!.on('data', (chunk: Buffer) => {
       bytes += chunk.length;
       if (bytes > outputLimit) stop(`Reader output exceeded ${outputLimit / 1024 / 1024} MB`);
     });
@@ -115,6 +118,6 @@ export const runCommand: Runner = (command) =>
         );
       else resolve({ stdout: Buffer.concat(stdout).toString('utf8') });
     });
-    child.stdin.on('error', () => undefined);
-    child.stdin.end(command.stdin ?? '');
+    child.stdin!.on('error', () => undefined);
+    child.stdin!.end(command.stdin ?? '');
   });

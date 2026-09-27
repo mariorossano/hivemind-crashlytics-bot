@@ -6,16 +6,16 @@ existing channels selected by Human. It does not use a model or change Firebase.
 
 Requires Hivemind's composable **Bot** contract (`hivemind-bot.json`, publish/tools
 capabilities and project-specific settings). Do not install against an older
-core that lacks that contract. This repository is available privately for
-first-install testing; see the verification and release checklist below.
+core that lacks that contract. Install from this repository; see the
+verification and release checklist below.
 
 ## Quick start
 
 This walkthrough uses Hivemind's UI and a brain to connect one Firebase app to
 one channel. The monitor itself does not use an AI model.
 
-**Before you begin:** Node.js >=22.13, npm and Git; access to this private GitHub
-repository; a running Hivemind with the composable Bots API; a Hivemind project
+**Before you begin:** Node.js >=22.13, npm and Git;
+a running Hivemind with the composable Bots API; a Hivemind project
 and brain; and a Firebase account with read access to the app. Run the terminal
 commands on the computer running Hivemind, not just on a computer viewing its UI.
 
@@ -145,6 +145,44 @@ or no matching issues.
 Ask the brain to stop, or use **Stop monitor**. One monitor serves all subscriptions
 in the project's profile; stopping it affects them all. Closing the browser or
 disabling service availability does not stop a running monitor.
+
+### Ask for the most frequent crash
+
+After connecting the bot, ask your brain in the relevant channel:
+
+> Which crash happened most in the last seven days? Give me its occurrence count,
+> impacted users and Firebase link.
+
+The brain uses the read-only native `top_issues` function for a **fresh Firebase
+query**, not a comparison of old chat messages. It takes the app overview `url`
+(from the request or the relevant subscription), optional `lookbackDays` (1–89,
+overrides URL time), and `limit` (1–10, default 1). If multiple apps are possible,
+the brain must clarify which one. No new channel, subscription or monitor restart
+is needed, and the query also works while monitoring is stopped.
+
+Results include the UTC interval, fetch time, effective state/type/version and
+minimum-count filters, occurrence counts, nullable impacted-user counts and
+Firebase links. `types=crash` selects fatal crashes; other types include nonfatal
+errors/ANRs. The ranking covers only the stated filters. All report pages must
+succeed before sorting; ties use issue ID order, and `moreWithSameCount` reports
+ties omitted by the requested limit. Empty results mean no matching issues.
+Unknown user counts are not zero; long titles/subtitles are marked as truncated.
+
+This function performs metadata reads only: no stack downloads, messages, cache
+updates, configuration or delivery changes. Its reader timeout is the lower of
+the configured timeout and 20 seconds. The reader also stops if its native caller
+dies earlier (for example, after a queued call exhausts its deadline). Errors and incomplete reports do not fall
+back to cached/chat counts. Firebase's reporting delay may still apply. This is
+an occurrence ranking, not an official Trending/Velocity alert.
+
+Native query receipts use `ok: true` for a ranking or `ok: false` with an
+`error.code` and safe `error.message`; failures never include partial results.
+Codes distinguish invalid arguments/URLs, required login, denied access, rate
+limits, provider failures, incomplete/invalid reports, oversized results,
+timeouts, busy/changed profiles and unexpected query failures. Raw provider
+bodies, exception text, stderr, paths and credentials are not returned. Query
+errors are inline receipts, not monitor errors in `status`. An outer Hivemind
+deadline can still end the call before a receipt is returned.
 
 ## Project-specific Hivemind settings
 
@@ -374,9 +412,13 @@ Release gates still requiring a decision or further verification:
   dependency change, separately from these simulated tests. Include Android if
   claiming live verification for both platforms. No such access is performed by
   the automated checks.
-- Before making the GitHub repository public, choose a license, repeat the
-  history/content privacy review and obtain explicit approval for the visibility
-  change. The current repository is private for installation testing;
-  `private: true` continues to prevent npm publication.
+- Repeat the history/content privacy review before each release. Runtime
+  profiles, credentials and real crash diagnostics must remain outside Git.
+- `private: true` continues to prevent npm publication; install from Git instead.
 
 See [REVIEW.md](REVIEW.md) for this review's findings and verification scope.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE), the same license used by
+[Hivemind](https://github.com/maxcorrads/hivemind). See [NOTICE](NOTICE) for attribution.

@@ -1,6 +1,7 @@
 {
   "name": "hivemind-crashlytics",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "private": true,
   "description": "Configurable read-only Crashlytics observation bot for Hivemind",
   "type": "module",
@@ -8,6 +9,8 @@
     "hivemind-crashlytics": "bin/hivemind-crashlytics.mjs"
   },
   "files": [
+    "LICENSE",
+    "NOTICE",
     "bin",
     "src",
     "BOT-TOOLS.md",

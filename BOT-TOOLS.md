@@ -48,7 +48,45 @@ Public channel observations need an appropriate wake subscription/addressing
 for a brain to react; inviting the bot alone does not set a rule or create a
 worker task. Analysis/fixes still follow Human's channel instructions.
 
-Discover this bot with `bot_tools`, then use `call_bot_tool` for `status`, `follow`, `unfollow`, `retry`, `start` or `stop`. Native `follow` and `retry` configure only and require a stopped monitor; use `start` explicitly when monitoring is authorized. The operator CLI examples above retain their documented automatic start behavior. Setup and connection never read providers or start monitoring. Receive is not advertised.
+Discover this bot with `bot_tools`, then use `call_bot_tool` for `status`, `top_issues`, `follow`, `unfollow`, `retry`, `start` or `stop`. Native `follow` and `retry` configure only and require a stopped monitor; use `start` explicitly when monitoring is authorized. The operator CLI examples above retain their documented automatic start behavior. Setup and connection never read providers or start monitoring. Receive is not advertised.
+
+### Fresh occurrence ranking
+
+For questions such as “Which crash happened most in the last seven days?”, use
+`top_issues`, not old channel messages or the number of bot notifications. Pass
+the exact app overview `url`, optional `lookbackDays` (1–89), and `limit` (1–10,
+default 1). Resolve the URL from Human's request or the relevant subscription in
+`status` → `subscriptions`; follow `nextOffset` and ask if several apps could
+match. Do not guess an app or silently reuse another channel's source. No new
+subscription or destination channel is required for a query.
+
+It reads Firebase now, fully paginates before sorting by events descending, and
+returns event/user counts, links, UTC interval, effective filters and fetch time.
+Quote that scope: OPEN-only results are not the most frequent across all states;
+`types=crash` selects fatal crashes, while nonfatal/ANR reports describe errors.
+Exact version filters and minimum event/user thresholds still apply. Explicit
+`lookbackDays` overrides only the URL's time filter. Unknown users stay `null`,
+never zero. Equal counts use issue ID order; `moreWithSameCount` flags tied issues
+excluded by the limit, so do not call a tied first result the unique winner.
+Empty means no matching issues, not an app without crashes. Long titles/subtitles
+are marked `textTruncated`; open the original for the full text.
+
+Check `ok` before using a result: `ok: true` contains the ranking; `ok: false`
+contains an allowlisted `error.code` and safe `error.message`, with no ranking.
+For example `AUTH_REQUIRED` needs Firebase login, `PERMISSION_DENIED` requires
+account access, `INVALID_SOURCE` requires a supported app URL, and `TIMEOUT` or
+`INCOMPLETE_REPORT` means no usable ranking. Report that error; do not interpret
+HTTP success as an empty ranking or automatically retry denied access. Query
+errors are returned inline, not recorded as monitor/delivery errors in `status`.
+
+The query does not stop/start monitoring, post messages, fetch stacks or change
+settings, subscriptions, caches or delivery state. It can run during monitoring.
+Its reader deadline is at most 20 seconds. A private parent-lifetime connection
+also stops the reader if the native caller dies earlier, including a shortened
+deadline after queueing. A timeout, API error or incomplete report fails with no
+stale/partial fallback.
+Report the failure, not a fabricated ranking. Occurrence ranking is not an
+official Trending/Velocity alert or authorization to investigate/fix an issue.
 
 After Human configures and connects the service, one explicit Human request may
 authorize channel preparation, native `follow`, `start` and verification together;

@@ -39,5 +39,5 @@ permissions, OAuth refresh or current Firebase availability. Run an explicitly
 authorized read-only smoke test against the intended app before production
 rollout. Never include real crash samples or credentials in public test fixtures.
 
-No license or public reporting destination has been chosen yet. Do not publish
-credentials, private crash content or full local logs in an issue.
+This project uses the [Apache License 2.0](LICENSE). Do not publish credentials,
+private crash content or full local logs in an issue.

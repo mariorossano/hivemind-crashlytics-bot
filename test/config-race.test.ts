@@ -28,6 +28,10 @@ const cases: Array<{ name: string; run: (home: string) => Promise<unknown> }> = 
   { name: 'CLI retry', run: (home) => main(['retry', '--home', home, '--id', 'sub']) },
   { name: 'native start', run: (home) => invoke(home, { ...context, tool: 'start' }) },
   {
+    name: 'native top_issues',
+    run: (home) => invoke(home, { ...context, tool: 'top_issues', arguments: { url: source } }),
+  },
+  {
     name: 'native follow',
     run: (home) =>
       invoke(home, { ...context, tool: 'follow', arguments: { url: source, channel: 'channel' } }),
@@ -97,7 +101,11 @@ for (const item of cases) {
       },
     );
 
-    await assert.rejects(item.run(home), /Profile settings changed; run the command again/);
+    if (item.name === 'native top_issues') {
+      const result = (await item.run(home)) as { ok: boolean; error: { code: string } };
+      assert.equal(result.ok, false);
+      assert.equal(result.error.code, 'CONFIG_CHANGED');
+    } else await assert.rejects(item.run(home), /Profile settings changed; run the command again/);
     assert.equal(raced, true);
     assert.equal(
       JSON.parse(readFileSync(path.join(home, 'config.json'), 'utf8')).autoStacks,

@@ -82,6 +82,26 @@ test(
     assert.equal(setup.status, 201);
     const created = (await setup.json()) as any;
     assert.equal(created.connected, true);
+    const catalog = await app.request(`${origin}/api/agent/bot-tools`, {
+      headers: { authorization: `Bearer ${brain.token}` },
+    });
+    assert.equal(catalog.status, 200);
+    const tools = ((await catalog.json()) as any).bots.find(
+      (bot: any) => bot.id === created.bot.id,
+    ).tools;
+    const ranking = tools.find((tool: any) => tool.name === 'top_issues');
+    assert.equal(ranking.effect, 'read');
+    assert.equal(ranking.parameters.fields.find((field: any) => field.key === 'limit').maximum, 10);
+    // Exercise real core argument admission without contacting Firebase.
+    const invalidRanking = await app.request(`${origin}/api/agent/bots/${created.bot.id}/tools`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${brain.token}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        tool: 'top_issues',
+        arguments: { url: 'https://example.invalid', limit: 11 },
+      }),
+    });
+    assert.equal(invalidRanking.status, 400);
     const call = async (tool: string, args = {}) => {
       const response = await app.request(`${origin}/api/agent/bots/${created.bot.id}/tools`, {
         method: 'POST',
@@ -103,6 +123,13 @@ test(
       return body.result;
     };
     assert.equal((await call('status')).monitorRunning, false);
+    const invalidSource = await call('top_issues', {
+      url: 'https://console.firebase.google.com/project/example-prod/crashlytics/app/ios:com.example.app/issues?tag=regressed',
+    });
+    assert.equal(invalidSource.ok, false);
+    assert.equal(invalidSource.error.code, 'INVALID_SOURCE');
+    assert.match(invalidSource.error.message, /tag=all/);
+    assert.equal(invalidSource.issues, undefined);
     const followed = await call('follow', {
       url: 'https://console.firebase.google.com/project/example-prod/crashlytics/app/ios:com.example.app/issues',
       channel: channel.id,

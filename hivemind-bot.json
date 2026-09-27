@@ -9,6 +9,38 @@
   "capabilities": ["publish", "tools"],
   "tools": [
     {
+      "name": "top_issues",
+      "description": "Read a fresh, fully paginated Firebase ranking by occurrence count for one exact app URL. Returns counts, impacted users (null if unknown), links, interval, filters and ties. URL filters and profile thresholds/versions apply. No cache, stacks, publication or monitor changes; usable while monitoring. Check ok: true contains a ranking; false contains safe error.code/message, never partial or stale results. Query errors are inline, not in monitor status.",
+      "effect": "read",
+      "parameters": {
+        "version": 1,
+        "fields": [
+          {
+            "key": "url",
+            "label": "Firebase app overview URL",
+            "type": "string",
+            "required": true,
+            "maxLength": 2048
+          },
+          {
+            "key": "lookbackDays",
+            "label": "Override rolling window (days)",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 89
+          },
+          {
+            "key": "limit",
+            "label": "Number of issues",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 1
+          }
+        ]
+      }
+    },
+    {
       "name": "retry",
       "description": "Explicitly requeue blocked deliveries for one enabled subscription after the operator resolves the cause and authorizes retry. Requires a stopped monitor; preserves event and attachment IDs. Does not start polling or send messages.",
       "effect": "configure",

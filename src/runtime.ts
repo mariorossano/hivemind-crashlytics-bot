@@ -32,6 +32,7 @@ import { runCommand, type Runner } from './readers/process.ts';
 import { excerpt, variantInventorySchema, type Snapshot } from './readers/config.ts';
 import { loadArtifact, bundleArtifacts, partitionArtifacts, privateWrite } from './artifacts.ts';
 import { readJsonInput } from './input.ts';
+import { topIssues } from './top-issues.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -262,6 +263,17 @@ export class CrashlyticsBot {
     return this.db
       .prepare('SELECT * FROM subscriptions ORDER BY id')
       .all() as unknown as Subscription[];
+  }
+  async topIssues(args: unknown) {
+    // Serialize configuration/identity changes, not the running monitor. The
+    // query only reads metadata and never applies a snapshot to this database.
+    const release = this.lock('setup');
+    try {
+      this.assertCurrentConfig();
+      return await topIssues(this.config, this.home, this.runner, args);
+    } finally {
+      release();
+    }
   }
   retry(id: string) {
     // Explicit operator recovery only: reconnect/start never retry denied writes.

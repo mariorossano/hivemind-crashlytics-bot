@@ -2,10 +2,20 @@ import { z } from 'zod/v3';
 import { CrashlyticsBot } from './runtime.ts';
 import { assertProject, projectBinding } from './profile.ts';
 import { botStatus } from './bot-status.ts';
+import { queryFailure } from './query-errors.ts';
 
 const inputSchema = z
   .object({
-    tool: z.enum(['connect', 'status', 'start', 'stop', 'follow', 'unfollow', 'retry']),
+    tool: z.enum([
+      'connect',
+      'status',
+      'top_issues',
+      'start',
+      'stop',
+      'follow',
+      'unfollow',
+      'retry',
+    ]),
     projectId: z.string().min(1),
     botId: z.string().min(1),
     botName: z.string().min(1),
@@ -49,6 +59,13 @@ export async function invoke(home: string, raw: unknown) {
     const current = bot.db.prepare('SELECT id FROM bots WHERE project=?').get(input.projectId);
     if (!current || current.id !== input.botId) throw new Error('Connect this bot identity first');
     if (input.tool === 'status') return botStatus(bot, input.arguments);
+    if (input.tool === 'top_issues') {
+      try {
+        return { ok: true as const, ...(await bot.topIssues(input.arguments)) };
+      } catch (error) {
+        return queryFailure(error);
+      }
+    }
     if (['start', 'stop'].includes(input.tool)) z.object({}).strict().parse(input.arguments);
     if (input.tool === 'start') {
       await bot.start();

@@ -3,15 +3,21 @@ import { authenticatedGet } from './firebase-auth.ts';
 import { resolveApp } from './crashlytics.ts';
 import { inspectIssue, parseIssue } from './stacks.ts';
 import { readMonitor } from './monitor.ts';
+import { readTopIssues } from '../top-issues.ts';
+import { queryFailure } from '../query-errors.ts';
+import { installParentLifeline } from './parent-lifeline.ts';
 import { readJsonInput } from '../input.ts';
 import { z } from 'zod';
 process.umask(0o077);
+const releaseLifeline = installParentLifeline();
+let ranking = false;
 try {
   const request = z
     .object({
       url: z.string().url(),
       config: configSchema,
-      action: z.literal('inspect').optional(),
+      action: z.enum(['inspect', 'top_issues']).optional(),
+      limit: z.number().int().min(1).max(10).optional(),
       prefetchStacks: z.boolean().optional(),
       enrichmentDeadline: z.number().int().nonnegative().safe().optional(),
       options: z
@@ -29,6 +35,7 @@ try {
     })
     .strict()
     .parse(await readJsonInput(process.stdin));
+  ranking = request.action === 'top_issues';
   const config = request.config;
   const target = request.action === 'inspect' ? parseIssue(request.url, config) : undefined;
   const source = target?.source ?? parseSource(request.url, config);
@@ -40,6 +47,8 @@ try {
         await inspectIssue(source, appId, target.issue, get, process.cwd(), request.options),
       ),
     );
+  else if (request.action === 'top_issues')
+    console.log(JSON.stringify(await readTopIssues(source, appId, get, request.limit ?? 1)));
   else {
     const snapshot = await readMonitor(source, appId, get, process.cwd(), {
       prefetchStacks: request.prefetchStacks === true,
@@ -51,9 +60,14 @@ try {
     console.log(JSON.stringify(snapshot));
   }
 } catch (error) {
-  const message =
-    error instanceof Error && error.name !== 'ZodError'
-      ? error.message
-      : 'Firebase response/configuration did not match the expected schema';
-  console.log(JSON.stringify({ error: message.slice(0, 300) }));
+  if (ranking) console.log(JSON.stringify(queryFailure(error)));
+  else {
+    const message =
+      error instanceof Error && error.name !== 'ZodError'
+        ? error.message
+        : 'Firebase response/configuration did not match the expected schema';
+    console.log(JSON.stringify({ error: message.slice(0, 300) }));
+  }
+} finally {
+  releaseLifeline();
 }
