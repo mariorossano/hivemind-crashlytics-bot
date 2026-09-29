@@ -2,7 +2,7 @@
   "version": 1,
   "id": "hivemind-crashlytics",
   "name": "Crashlytics",
-  "instructions": "BOT-TOOLS.md",
+  "instructions": "LAUNCH.md",
   "settings": "settings.schema.json",
   "command": "bin/hivemind-crashlytics.mjs",
   "kind": "bot",

@@ -130,8 +130,12 @@ separate tool call that begins reads and posts.** Both are authorized by this
 single message. The bot never creates channels itself, and inviting it alone
 does not choose an app.
 
-If the brain lacks the instructions, provide the installed
-[BOT-TOOLS.md](BOT-TOOLS.md); do not let it guess commands or report success
+The launcher includes the compact [LAUNCH.md](LAUNCH.md). Before using the bot,
+the brain reads the full [BOT-TOOLS.md](BOT-TOOLS.md) using the profile-scoped
+`instructions` command included there. This only reads packaged documentation;
+it does not contact Firebase, configure a profile or start monitoring. Parameter
+schemas remain discoverable with `bot_tools`. Both documents ship in the package.
+If the brain lacks the guide, provide it; do not let it guess commands or report success
 without tool results. Native client permission prompts may still need your
 approval; a chat instruction does not disable those checks.
 
@@ -373,7 +377,7 @@ the 32 MiB attachment limit before loading their constituent files into memory.
 
     hivemind bots add /absolute/hivemind-crashlytics/hivemind-bot.json --home /absolute/hive-profile
 
-Registration is local only: no bot/channel/read/monitor is started. Configure/enable the bot for a project in Project settings → Bots, or bind its existing profile. New/resumed brain launch prompts then include `BOT-TOOLS.md` with that project's profile. Existing brains are not silently updated: give them the installed instructions or use a refreshed launch prompt. Human can then ask, in whichever channel they choose, “Follow the crashes from this Firebase app here: URL”. The brain resolves that channel and invokes `follow`.
+Registration is local only: no bot/channel/read/monitor is started. Configure/enable the bot for a project in Project settings → Bots, or bind its existing profile. New/resumed brain launch prompts then include the compact `LAUNCH.md` with that project's profile; the full `BOT-TOOLS.md` is read on demand through `instructions`. Existing brains are not silently updated: give them the installed instructions or use a refreshed launch prompt. Human can then ask, in whichever channel they choose, “Follow the crashes from this Firebase app here: URL”. The brain resolves that channel and invokes native `follow`, then `start` when monitoring is authorized.
 
 No import or runtime dependency on Hivemind or sibling bot repositories. Uses the existing generic bot API: snapshot, create/invite bot, idempotent bot message delivery. Public/private channel mail behavior remains Hivemind's normal behavior; private members receive observations, public channels retain mention-based delivery. The bot does not invite brains or modify directives.
 

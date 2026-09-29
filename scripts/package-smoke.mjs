@@ -17,7 +17,7 @@ try {
   for (const file of pack.files) {
     assert.match(
       file.path,
-      /^(?:LICENSE|NOTICE|bin\/[^/]+\.mjs|src\/.+\.ts|(?:README|BOT-TOOLS|SECURITY|REVIEW|ALERTS)\.md|(?:package|hivemind-bot|settings.schema)\.json)$/,
+      /^(?:LICENSE|NOTICE|bin\/[^/]+\.mjs|src\/.+\.ts|(?:README|BOT-TOOLS|LAUNCH|SECURITY|REVIEW|ALERTS)\.md|(?:package|hivemind-bot|settings.schema)\.json)$/,
     );
     assert.ok(!/\.db|\.env|\.log|node_modules|hivemind-project|config\.json/.test(file.path));
   }
@@ -28,6 +28,7 @@ try {
     'README.md',
     'ALERTS.md',
     'BOT-TOOLS.md',
+    'LAUNCH.md',
     'SECURITY.md',
     'REVIEW.md',
   ]) {
@@ -82,6 +83,11 @@ try {
   assert.match(run(['instructions']), /Native Hivemind tools/);
   assert.match(run(['instructions']), /top_issues/);
   const manifest = JSON.parse(readFileSync(path.join(install, 'hivemind-bot.json'), 'utf8'));
+  assert.equal(manifest.instructions, 'LAUNCH.md');
+  assert.match(
+    readFileSync(path.join(install, manifest.instructions), 'utf8'),
+    /\{\{command\}\} instructions/,
+  );
   const metadata = JSON.parse(readFileSync(path.join(install, 'package.json'), 'utf8'));
   assert.equal(metadata.license, 'Apache-2.0');
   assert.match(

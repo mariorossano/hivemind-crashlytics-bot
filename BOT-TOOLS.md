@@ -1,8 +1,24 @@
 # Crashlytics app monitoring
 
+This is the full operational guide, loaded on demand with `instructions`.
+Hivemind injects only [LAUNCH.md](LAUNCH.md) at startup. `instructions` reads
+this file without contacting Firebase or opening/creating a profile.
+
+## Hivemind brain entry point
+
+Discover this bot with `bot_tools` and use `call_bot_tool` for monitoring and
+rankings. Read the native-tool sections below before acting. The CLI monitoring
+examples are an operator reference, not a fallback for unavailable or denied
+native tools. Only the documented `inspect` command supplies additional samples
+that have no native equivalent, on an authorized investigation and with native
+client permissions still in force. The `{{command}}` placeholders in this guide
+mean the exact installed CLI plus project `--home` prefix used to read it.
+
+## Operator CLI and stack reference
+
 The supplied command includes this Hivemind project's private profile. Preserve its --home argument; do not substitute another project's profile. Configuration and availability are managed by Human in Project settings → Bots. Configuration does not start monitoring, and availability does not stop an existing monitor.
 
-Use this installed CLI when Human asks to follow or stop monitoring an app's Firebase Crashlytics issues.
+Operators can use the installed CLI to follow or stop monitoring an app's Firebase Crashlytics issues. Hivemind brains use the native tools instead.
 
 - Resolve the destination from the Human request/current Hivemind conversation using MCP channels. Any existing public/private channel may be used, including a channel with GitLab or other sources. Do not require a dedicated crash channel, hardcode a name, implicitly create a channel just to follow a source, or silently choose a different project. Human may explicitly ask you to create a channel and invite members as part of setup; perform those steps with Hivemind's channel tools before following. The Crashlytics bot itself never creates channels. Ask if the destination is ambiguous.
 - Obtain the exact app overview URL from Human (Firebase console → Crashlytics → app → issues). The URL defines project and bundle/package; these are never hardcoded. Supported URL filters: state, time in days, types, tag=all; sort is presentation-only. Additional filters must be configured explicitly, never silently dropped.
